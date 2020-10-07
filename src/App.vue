@@ -4,15 +4,21 @@
       {{ JSON.stringify(errors) }}
     </div>
     <div v-else>
-      <login-form />
-      <div id="nav">
-        <router-link to="/">Home</router-link>|
-        <router-link
-          :to="{ name: 'Timesheet', params: {week: current.week, year: current.year } }"
-        >Timesheet</router-link>
-      </div>
+      <b-container>
+        <login-form />
+        <div id="nav">
+          <router-link to="/">Home</router-link>|
+          <router-link
+            :to="{
+              name: 'Timesheet',
+              params: { week: current.week, year: current.year },
+            }"
+            >Timesheet</router-link
+          >
+        </div>
 
-      <router-view />
+        <router-view />
+      </b-container>
     </div>
   </div>
 </template>
