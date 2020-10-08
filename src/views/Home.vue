@@ -1,7 +1,6 @@
 <template>
   <div class="home">
-    <img alt="Vue logo" src="../assets/logo.png">
-    {{$store.state.count}}
+    Instructions on how to use the app?
   </div>
 </template>
 

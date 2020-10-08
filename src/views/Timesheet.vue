@@ -1,6 +1,10 @@
 <template>
-  <div class="about">
-    <h1>Vnos ur za izbrani teden</h1>
+  <div class="mb-4">
+    <b-navbar variant="faded" type="light">
+      <b-navbar-brand tag="h1" class="mb-0"
+        >Insert hours for this week</b-navbar-brand
+      >
+    </b-navbar>
     <!--
     <b-form-datepicker
       id="datepicker"
@@ -18,11 +22,11 @@
         ><b-icon-arrow-right-circle scale="1.5" class="ml-2"
       /></a>
     </div>
-    <b-form @submit.prevent="onSubmit()">
-      <div v-if="isLoading">
-        <b-spinner label="Loading..."></b-spinner>
-      </div>
-      <b-table-simple borderless responsive="true" v-else>
+    <div v-if="isLoading">
+      <b-spinner label="Loading..."></b-spinner>
+    </div>
+    <b-form @submit.prevent="onSubmit()" v-else>
+      <b-table-simple borderless responsive="true">
         <b-tbody>
           <b-tr
             v-for="(w, index) in weeks"
@@ -56,7 +60,7 @@
                     :workplaces="workplaces"
                   />
                 </b-td>
-                <b-td>
+                <b-td class="w-25 pl-0 pr-0 ml-0 mr-0">
                   <HourPicker v-bind:hours.sync="w.hours" />
                 </b-td>
                 <b-td class="w-25 mr-0 ml-0 pr-2 pl-0 text-right">
@@ -66,8 +70,7 @@
                     class="mr-1"
                     @click.prevent="addEntry(w, index)"
                   >
-                    <span v-if="w.id"><b-icon-plus /></span>
-                    <span v-else><b-icon-plus /></span>
+                    <b-icon-plus scale="1.35" />
                   </b-button>
                   <b-button
                     size="sm"
@@ -82,29 +85,28 @@
             </b-table-simple>
           </b-tr>
         </b-tbody>
-        <b-tfoot>
-          <b-tr>
-            <b-th colspan="4">Skupaj ur: {{ hoursSum }}</b-th>
-          </b-tr>
-        </b-tfoot>
+        <caption class="mt-0 pt-0">
+          <em>Skupaj ur: {{ hoursSum }}</em>
+        </caption>
       </b-table-simple>
-      <button>Save all</button>
+      <b-button type="submit">Save all</b-button>
     </b-form>
-    <div>
-      <hr />
-      <CompanyPicker
-        v-bind:workplace_id.sync="workplace_id"
-        :workplaces="workplaces"
-      />
-      <HourPicker v-bind:hours.sync="hours" />
-      <button @click.prevent="UpdateOne('hours')">Set hours</button>
-      <button @click.prevent="UpdateOne('workplace_id')">Set workplaces</button>
-      <button @click.prevent="UpdateAll()">Set all</button>
-    </div>
-    <pre style="width: 200px; margin: 0 auto; text-align: left">
-      {{ weeks }}
-      </pre
-    >
+    <hr />
+    <b-form>
+      <b-row>
+        <b-col cols="5" class="ml-0 mr-0 pl-2 pr-0">
+          <CompanyPicker
+            v-bind:workplace_id.sync="workplace_id"
+            :workplaces="workplaces"
+        /></b-col>
+        <b-col cols="5" class="ml-0 mr-0 pl-2 pr-2"
+          ><HourPicker v-bind:hours.sync="hours"
+        /></b-col>
+        <b-col cols="2" class="ml-0 mr-0 pl-0 pr-0 text-center">
+          <b-button variant="primary" @click.prevent="Update()"> Set </b-button>
+        </b-col>
+      </b-row>
+    </b-form>
   </div>
 </template>
 
@@ -212,21 +214,17 @@ export default {
         console.log(error);
       }
     },
-    UpdateOne: function (key) {
-      let value = key === "hours" ? this.hours : this.workplace_id;
+    Update: function () {
+      const updateAllProps = {};
+      if (this.hours) {
+        updateAllProps.hours = this.hours;
+      }
+      if (this.workplace_id) {
+        updateAllProps.workplace_id = this.workplace_id;
+      }
       const weeks = this.weeks.map((week) => ({
         ...week,
-        [key]: value,
-      }));
-      console.log(weeks.map((f) => f.hours));
-      this.weeks = [];
-      this.weeks.push(...weeks);
-    },
-    UpdateAll: function () {
-      const weeks = this.weeks.map((week) => ({
-        ...week,
-        hours: this.hours,
-        workplace_id: this.workplace_id,
+        ...updateAllProps,
       }));
       this.weeks = [];
       this.weeks.push(...weeks);

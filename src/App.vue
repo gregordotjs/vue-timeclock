@@ -4,19 +4,41 @@
       {{ JSON.stringify(errors) }}
     </div>
     <div v-else>
-      <b-container>
-        <login-form />
-        <div id="nav">
-          <router-link to="/">Home</router-link>|
-          <router-link
-            :to="{
-              name: 'Timesheet',
-              params: { week: current.week, year: current.year },
-            }"
-            >Timesheet</router-link
-          >
-        </div>
+      <div>
+        <b-navbar toggleable="lg" type="dark" variant="dark">
+          <b-navbar-brand href="#">Clock-in</b-navbar-brand>
 
+          <b-navbar-toggle target="nav-collapse"></b-navbar-toggle>
+
+          <b-collapse id="nav-collapse" is-nav>
+            <b-navbar-nav>
+              <b-nav-item to="/">Home</b-nav-item>
+              <b-nav-item
+                :to="{
+                  name: 'Timesheet',
+                  params: { week: current.week, year: current.year },
+                }"
+                >Timesheet</b-nav-item
+              >
+            </b-navbar-nav>
+
+            <!-- Right aligned nav items -->
+            <b-navbar-nav class="ml-auto">
+              <login-form v-if="!token" />
+              <b-nav-item-dropdown right v-if="token">
+                <!-- Using 'button-content' slot -->
+                <template v-slot:button-content>
+                  <em>{{ name }}</em>
+                </template>
+                <b-dropdown-item href="#" @click.prevent="Logout()"
+                  >Sign Out</b-dropdown-item
+                >
+              </b-nav-item-dropdown>
+            </b-navbar-nav>
+          </b-collapse>
+        </b-navbar>
+      </div>
+      <b-container>
         <router-view />
       </b-container>
     </div>
@@ -34,11 +56,19 @@ export default {
       current: generateUrl(),
     };
   },
+  methods: {
+    Logout: function () {
+      this.$store.dispatch("logout");
+      if (this.$route.name !== "Home") {
+        this.$router.replace({ name: "Home" });
+      }
+    },
+  },
   components: {
     LoginForm,
   },
   computed: {
-    ...mapGetters(["errors"]),
+    ...mapGetters(["errors", "token", "name"]),
   },
 };
 </script>

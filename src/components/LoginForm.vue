@@ -1,17 +1,24 @@
 <template>
-  <form v-on:submit.prevent="onSubmit()" v-if="!token">
-    <input type="text" placeholder="E-mail" v-model="email" />
-    <input type="password" placeholder="Password" v-model="password" />
-    <button>Login</button>
-  </form>
-  <div v-else>
-    Pozdravljen, kolega {{ name }}
-    <a href @click.prevent="logout()">Odjavi</a>
-  </div>
+  <b-nav-form v-on:submit.prevent="onSubmit()">
+    <b-form-input
+      type="email"
+      size="sm"
+      class="mr-sm-2"
+      placeholder="e-mail"
+      v-model="email"
+    ></b-form-input>
+    <b-form-input
+      type="password"
+      size="sm"
+      class="mr-sm-2"
+      placeholder="password"
+      v-model="password"
+    ></b-form-input>
+    <b-button size="sm" class="my-2 my-sm-0" type="submit">Login</b-button>
+  </b-nav-form>
 </template>
 
 <script>
-import { mapGetters } from "vuex";
 export default {
   name: "LoginForm",
   data: function () {
@@ -21,19 +28,12 @@ export default {
     };
   },
   methods: {
-    logout: function () {
-      this.$store.dispatch("logout");
-      this.$router.replace({ name: "Home" });
-    },
     onSubmit: function () {
       this.$store.dispatch("login", {
         email: this.email,
         password: this.password,
       });
     },
-  },
-  computed: {
-    ...mapGetters(["name", "token"]),
   },
 };
 </script>
