@@ -4,8 +4,8 @@ const cfg = { weekStartsOn: 1 };
 
 export const generateUrl = (date = null) => {
 
-    const today = date ? new Date(date) : new Date();
-
+    let today = date ? new Date(date) : new Date();
+    today = subWeeks(today, 1); // zakomentiraj ta del, če želiš za aktualni teden
     return {
         week: getWeek(today, cfg),
         year: getYear(today, cfg)

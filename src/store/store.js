@@ -64,13 +64,8 @@ export const store = new Vuex.Store({
         const { email, name } = rui.data;
         context.commit("setUserInfo", { email, name });
       } catch (error) {
-        const { response, statusText } = { ...error };
-        if (response.status === 401) {
-          localStorage.removeItem("token");
-          context.commit("setErrors", statusText);
-        } else {
-          context.commit("setErrors", statusText);
-        }
+        localStorage.removeItem("token");
+        context.dispatch("logout");
       }
     },
   },

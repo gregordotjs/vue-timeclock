@@ -2,7 +2,7 @@
   <div class="mb-4">
     <b-navbar variant="faded" type="light">
       <b-navbar-brand tag="h1" class="mb-0"
-        >Insert hours for this week</b-navbar-brand
+        >Insert hours for the past week</b-navbar-brand
       >
     </b-navbar>
     <!--
@@ -13,12 +13,20 @@
       :hide-header="true"
     ></b-form-datepicker>
     -->
-    <div class="mb-4 mt-4">
-      <a href @click.prevent="changeDate(true)" :disabled="isLoading"
+    <div class="mb-2 mt-2">
+      <a
+        href
+        @click.prevent="changeDate(true)"
+        :disabled="isLoading"
+        v-bind:hidden="true"
         ><b-icon-arrow-left-circle scale="1.5" class="mr-2"
       /></a>
       {{ startOfCurrentWeek }} &mdash; {{ endOfCurrentWeek }}
-      <a href @click.prevent="changeDate(false)" :disabled="isLoading"
+      <a
+        href
+        @click.prevent="changeDate(false)"
+        :disabled="isLoading"
+        v-bind:hidden="true"
         ><b-icon-arrow-right-circle scale="1.5" class="ml-2"
       /></a>
     </div>
@@ -26,73 +34,92 @@
       <b-spinner label="Loading..."></b-spinner>
     </div>
     <b-form @submit.prevent="onSubmit()" v-else>
-      <b-table-simple borderless responsive="true">
-        <b-tbody>
-          <b-tr
-            v-for="(w, index) in weeks"
-            v-bind:key="w.date"
-            v-bind:set="(emptyRow = dateNotSet(w))"
-          >
-            <b-table-simple outlined>
-              <b-tr>
-                <b-td colspan="3">
-                  <span
-                    v-bind:class="emptyRow ? 'text-secondary' : 'text-success'"
-                  >
-                    {{ w.cleanDate }}
-                    <b-icon-check-2-circle
-                      variant="success"
-                      scale="1.2"
-                      v-if="!emptyRow"
-                    />
-                    <b-icon-circle
-                      variant="secondary"
-                      scale="1"
-                      v-if="emptyRow"
-                    />
-                  </span>
-                </b-td>
-              </b-tr>
-              <b-tr>
-                <b-td>
-                  <CompanyPicker
-                    v-bind:workplace_id.sync="w.workplace_id"
-                    :workplaces="workplaces"
-                  />
-                </b-td>
-                <b-td class="w-25 pl-0 pr-0 ml-0 mr-0">
-                  <HourPicker v-bind:hours.sync="w.hours" />
-                </b-td>
-                <b-td class="w-25 mr-0 ml-0 pr-2 pl-0 text-right">
-                  <b-button
-                    size="sm"
+      <b-card
+        v-for="(w, index) in weeks"
+        v-bind:key="w.date"
+        v-bind:set="(emptyRow = dateNotSet(w))"
+        class="mb-3"
+        v-bind:border-variant="emptyRow ? '' : 'success'"
+      >
+        <b-card-text class="card-subtitle text-muted mb-1">
+          <b-row>
+            <b-col cols="8" class="text-right">
+              <span
+                class="text-capitalize"
+                v-bind:class="emptyRow ? 'text-secondary' : 'text-success'"
+              >
+                {{ w.cleanDate }}
+
+                <b-icon-check-2-circle
+                  variant="success"
+                  scale="1.2"
+                  v-if="!emptyRow"
+                />
+                <b-icon-circle
+                  variant="secondary"
+                  scale="1"
+                  v-if="emptyRow"
+                /> </span
+            ></b-col>
+            <b-col cols="4">
+              <b-button variant="outline-light" v-if="w.id">
+                <b-icon-trash
+                  variant="danger"
+                  @click.prevent="deleteEntry(index, w.id)"
+                /> </b-button
+            ></b-col>
+          </b-row>
+        </b-card-text>
+        <b-card-text class="p-0 m-0">
+          <div v-if="!emptyRow && !w.edit">
+            <b-row>
+              <b-col cols="8" class="text-right"
+                >{{ workplaces.find((wp) => wp.id === w.workplace_id).name }},
+                {{ w.hours }}</b-col
+              >
+              <b-col cols="4">
+                <b-button variant="outline-light">
+                  <b-icon-pencil-fill
+                    variant="dark"
+                    @click.prevent="setEdit(index)"
+                  /> </b-button
+              ></b-col>
+            </b-row>
+          </div>
+
+          <div v-else>
+            <b-row class="mb-2">
+              <b-col cols="12">
+                <CompanyPicker
+                  v-bind:workplace_id.sync="w.workplace_id"
+                  :workplaces="workplaces"
+                />
+              </b-col>
+            </b-row>
+            <b-row>
+              <b-col cols="9"><HourPicker v-bind:hours.sync="w.hours" /></b-col>
+              <b-col cols="3" class="text-right">
+                <b-button variant="outline-light">
+                  <b-icon-plus-circle
+                    v-if="!w.isLoading"
                     variant="primary"
-                    class="mr-1"
+                    scale="1.2"
                     @click.prevent="addEntry(w, index)"
-                  >
-                    <b-icon-plus scale="1.35" />
-                  </b-button>
-                  <b-button
-                    size="sm"
-                    variant="danger"
-                    v-if="w.id"
-                    @click.prevent="deleteEntry(index, w.id)"
-                  >
-                    <b-icon-trash />
-                  </b-button>
-                </b-td>
-              </b-tr>
-            </b-table-simple>
-          </b-tr>
-        </b-tbody>
-        <caption class="mt-0 pt-0">
-          <em>Skupaj ur: {{ hoursSum }}</em>
-        </caption>
-      </b-table-simple>
+                  />
+                  <b-spinner small v-if="w.isLoading"></b-spinner>
+                </b-button>
+              </b-col>
+            </b-row>
+          </div>
+        </b-card-text>
+      </b-card>
+      <template>
+        <em>Skupaj ur: {{ hoursSum }}</em>
+      </template>
       <b-button type="submit">Save all</b-button>
     </b-form>
-    <hr />
-    <b-form>
+
+    <b-form v-bind:hidden="true">
       <b-row>
         <b-col cols="5" class="ml-0 mr-0 pl-2 pr-0">
           <CompanyPicker
@@ -121,7 +148,7 @@ import {
   addWeeks,
   addDays,
 } from "date-fns";
-import { sl } from "date-fns/locale";
+import { srLatn } from "date-fns/locale";
 import { DATE_URL_FORMAT, WEEK_FORMAT } from "@/utils/consts";
 import { getTimesheet, deleteTimesheet, postTimesheet } from "@/api/timesheet";
 import { getWorkplaces } from "@/api/workplace";
@@ -129,22 +156,32 @@ import HourPicker from "@/components/HourPicker";
 import CompanyPicker from "@/components/CompanyPicker";
 import {
   BIconTrash,
-  BIconPlus,
-  BIconCheck2Circle,
-  BIconCircle,
+  BIconPlusCircle,
+  //BIconXCircle,
+  //BIconCheck2Circle,
+  //BIconCircle,
   BIconArrowLeftCircle,
   BIconArrowRightCircle,
+  BIconPencilFill,
 } from "bootstrap-vue";
+
+const locale = srLatn;
+const defaults = {
+  edit: false,
+  isLoading: false,
+};
 
 export default {
   name: "About",
   components: {
     HourPicker,
     CompanyPicker,
+    BIconPencilFill,
+    //BIconXCircle,
     BIconTrash,
-    BIconCheck2Circle,
-    BIconPlus,
-    BIconCircle,
+    //BIconCheck2Circle,
+    BIconPlusCircle,
+    //BIconCircle,
     BIconArrowLeftCircle,
     BIconArrowRightCircle,
   },
@@ -199,11 +236,12 @@ export default {
             const day = parse(date, "yyyy-MM-dd HH:mm:ss", new Date());
 
             updated.push({
-              cleanDate: format(day, WEEK_FORMAT, { locale: sl }),
+              cleanDate: format(day, WEEK_FORMAT, { locale }),
               date: format(day, DATE_URL_FORMAT),
               hours: hours_formated,
               workplace_id,
               id,
+              ...defaults,
             });
           }
           this.weeks = [];
@@ -242,6 +280,7 @@ export default {
         );
         return;
       }
+      this.weeks[index].isLoading = true;
       try {
         const res = await postTimesheet([timeEntry]);
         const { data, result, errors } = res.data;
@@ -249,11 +288,12 @@ export default {
           const { hours_formated, workplace_id, id, date } = data[0];
           const day = parse(date, "yyyy-MM-dd HH:mm:ss", new Date());
           const updated = {
-            cleanDate: format(day, WEEK_FORMAT, { locale: sl }),
+            cleanDate: format(day, WEEK_FORMAT, { locale }),
             date: format(day, DATE_URL_FORMAT),
             hours: hours_formated,
             workplace_id,
             id,
+            ...defaults,
           };
           this.$set(this.weeks, index, updated);
           this.sumHours();
@@ -283,6 +323,7 @@ export default {
             entry.workplace_id = "";
             entry.hours = "";
             entry.id = null;
+            entry.edit = false;
             this.$set(this.weeks, index, entry);
             this.sumHours();
           }
@@ -343,11 +384,12 @@ export default {
           }
 
           this.weeks.push({
-            cleanDate: format(day, WEEK_FORMAT, { locale: sl }),
+            cleanDate: format(day, WEEK_FORMAT, { locale }),
             date: format(day, DATE_URL_FORMAT),
             hours,
             workplace_id,
             id,
+            ...defaults,
           });
 
           day = addDays(day, 1);
@@ -358,6 +400,12 @@ export default {
         this.isLoading = false;
         this.sumHours();
       }
+    },
+    setEdit: function (index) {
+      this.weeks[index].edit = true;
+    },
+    cancelEdit: function (index) {
+      this.weeks[index].edit = false;
     },
     changeDate: function (isBack) {
       if (isBack) {
@@ -403,12 +451,12 @@ export default {
       return format(
         startOfWeek(this.date, { weekStartsOn: 1 }),
         "E d. M. yyy",
-        { locale: sl }
+        { locale }
       );
     },
     endOfCurrentWeek: function () {
       return format(endOfWeek(this.date, { weekStartsOn: 1 }), "E d. M. yyy", {
-        locale: sl,
+        locale,
       });
     },
   },
