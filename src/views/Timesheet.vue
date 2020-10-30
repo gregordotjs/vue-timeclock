@@ -5,14 +5,7 @@
         >Insert hours for the past week</b-navbar-brand
       >
     </b-navbar>
-    <!--
-    <b-form-datepicker
-      id="datepicker"
-      v-model="datePickerValue"
-      class="mb-2"
-      :hide-header="true"
-    ></b-form-datepicker>
-    -->
+
     <div class="mb-2 mt-2">
       <a
         href
@@ -41,7 +34,7 @@
         class="mb-3"
         v-bind:border-variant="emptyRow ? '' : 'success'"
       >
-        <b-card-text class="card-subtitle text-muted mb-1">
+        <b-card-text>
           <b-row>
             <b-col cols="8" class="text-right">
               <span
@@ -70,12 +63,16 @@
             ></b-col>
           </b-row>
         </b-card-text>
+
+        <b-card-text class="card-subtitle text-muted mb-1">
+          <b-row> </b-row>
+        </b-card-text>
         <b-card-text class="p-0 m-0">
           <div v-if="!emptyRow && !w.edit">
             <b-row>
               <b-col cols="8" class="text-right"
                 >{{ workplaces.find((wp) => wp.id === w.workplace_id).name }},
-                {{ w.hours }}</b-col
+                {{ w.hours }} ur</b-col
               >
               <b-col cols="4">
                 <b-button variant="outline-light">
@@ -88,24 +85,42 @@
           </div>
 
           <div v-else>
-            <b-row class="mb-2">
-              <b-col cols="12">
+            <b-row>
+              <b-col class="mb-2">
                 <CompanyPicker
-                  v-bind:workplace_id.sync="w.workplace_id"
                   :workplaces="workplaces"
+                  v-bind:workplace_id.sync="w.workplace_id"
                 />
               </b-col>
             </b-row>
             <b-row>
-              <b-col cols="9"><HourPicker v-bind:hours.sync="w.hours" /></b-col>
-              <b-col cols="3" class="text-right">
-                <b-button variant="outline-light">
-                  <b-icon-plus-circle
-                    v-if="!w.isLoading"
-                    variant="primary"
-                    scale="1.2"
-                    @click.prevent="addEntry(w, index)"
-                  />
+              <b-col>
+                <b-form-timepicker
+                  v-model="w.hours_from"
+                  locale="sl"
+                  placeholder="začetek"
+                  minutes-step="15"
+                  v-bind:hide-header="true"
+                ></b-form-timepicker>
+              </b-col>
+              <b-col>
+                <b-form-timepicker
+                  v-model="w.hours_to"
+                  locale="sl"
+                  placeholder="konec"
+                  minutes-step="15"
+                  v-bind:hide-header="true"
+                ></b-form-timepicker>
+              </b-col>
+            </b-row>
+            <b-row class="mt-2">
+              <b-col>
+                <b-button
+                  block
+                  variant="primary"
+                  @click.prevent="addEntry(w, index)"
+                >
+                  <span v-if="!w.isLoading" variant="primary"> Shrani </span>
                   <b-spinner small v-if="w.isLoading"></b-spinner>
                 </b-button>
               </b-col>
@@ -156,7 +171,7 @@ import HourPicker from "@/components/HourPicker";
 import CompanyPicker from "@/components/CompanyPicker";
 import {
   BIconTrash,
-  BIconPlusCircle,
+  //BIconPlusCircle,
   //BIconXCircle,
   //BIconCheck2Circle,
   //BIconCircle,
@@ -167,6 +182,8 @@ import {
 
 const locale = srLatn;
 const defaults = {
+  startTime: "07:00",
+  endTime: "15:00",
   edit: false,
   isLoading: false,
 };
@@ -180,7 +197,7 @@ export default {
     //BIconXCircle,
     BIconTrash,
     //BIconCheck2Circle,
-    BIconPlusCircle,
+    //BIconPlusCircle,
     //BIconCircle,
     BIconArrowLeftCircle,
     BIconArrowRightCircle,
@@ -193,6 +210,8 @@ export default {
       date = endOfWeek(date);
     }
     return {
+      time_from: "07:00",
+      time_to: "07:00",
       hours: "",
       workplace_id: "",
       workplaces: [],
@@ -272,7 +291,11 @@ export default {
       return id === null;
     },
     addEntry: async function (timeEntry, index) {
-      if (timeEntry.workplace_id === "" || timeEntry.hours === "") {
+      if (
+        timeEntry.workplace_id === "" ||
+        timeEntry.hours_from === "" ||
+        timeEntry.hours_to === ""
+      ) {
         this.showToast(
           "Select workplace and hours",
           "Data is not set",
@@ -282,19 +305,41 @@ export default {
       }
       this.weeks[index].isLoading = true;
       try {
-        const res = await postTimesheet([timeEntry]);
+        const res = await postTimesheet([
+          {
+            ...timeEntry,
+            hours_from: timeEntry.hours_from.slice(
+              0,
+              timeEntry.hours_from.length - 3
+            ),
+            hours_to: timeEntry.hours_to.slice(
+              0,
+              timeEntry.hours_to.length - 3
+            ),
+          },
+        ]);
         const { data, result, errors } = res.data;
         if (result && errors.length === 0) {
-          const { hours_formated, workplace_id, id, date } = data[0];
+          const {
+            hours_formated,
+            workplace_id,
+            id,
+            date,
+            hours_from,
+            hours_to,
+          } = data[0];
           const day = parse(date, "yyyy-MM-dd HH:mm:ss", new Date());
           const updated = {
             cleanDate: format(day, WEEK_FORMAT, { locale }),
             date: format(day, DATE_URL_FORMAT),
             hours: hours_formated,
+            hours_from,
+            hours_to,
             workplace_id,
             id,
             ...defaults,
           };
+          console.log(updated);
           this.$set(this.weeks, index, updated);
           this.sumHours();
           this.showToast(
@@ -355,10 +400,13 @@ export default {
         this.isLoading = true;
         this.weeks = [];
         const res = await getTimesheet(this.week, this.year);
+
         const data = res.data.data || [];
 
         let day = startOfWeek(this.date, { weekStartsOn: 1 });
         for (let i = 0; i < 7; i++) {
+          let hours_from = "";
+          let hours_to = "";
           let hours = "";
           let workplace_id = "";
           let id = null;
@@ -378,6 +426,8 @@ export default {
 
             if (timeEntry) {
               hours = timeEntry.hours_formated;
+              hours_from = timeEntry.hours_from;
+              hours_to = timeEntry.hours_to;
               workplace_id = parseInt(timeEntry.workplace_id);
               id = timeEntry.id;
             }
@@ -387,6 +437,8 @@ export default {
             cleanDate: format(day, WEEK_FORMAT, { locale }),
             date: format(day, DATE_URL_FORMAT),
             hours,
+            hours_from,
+            hours_to,
             workplace_id,
             id,
             ...defaults,
