@@ -36,7 +36,7 @@
       >
         <b-card-text>
           <b-row>
-            <b-col cols="8" class="text-right">
+            <b-col cols="12" class="text-center">
               <span
                 class="text-capitalize"
                 v-bind:class="emptyRow ? 'text-secondary' : 'text-success'"
@@ -48,14 +48,9 @@
                   scale="1.2"
                   v-if="!emptyRow"
                 />
-                <b-icon-circle
-                  variant="secondary"
-                  scale="1"
-                  v-if="emptyRow"
-                /> </span
-            ></b-col>
-            <b-col cols="4">
-              <b-button variant="outline-light" v-if="w.id">
+                <b-icon-circle variant="secondary" scale="1" v-if="emptyRow" />
+              </span>
+              <b-button variant="outline-light" v-if="w.id" class="p-0 ml-4">
                 <b-icon-trash
                   variant="danger"
                   @click.prevent="deleteEntry(index, w.id)"
@@ -70,12 +65,12 @@
         <b-card-text class="p-0 m-0">
           <div v-if="!emptyRow && !w.edit">
             <b-row>
-              <b-col cols="8" class="text-right"
-                >{{ workplaces.find((wp) => wp.id === w.workplace_id).name }},
-                {{ w.hours }} ur</b-col
-              >
-              <b-col cols="4">
-                <b-button variant="outline-light">
+              <b-col cols="12" class="text-center">
+                <span
+                  >{{ workplaces.find((wp) => wp.id === w.workplace_id).name }},
+                  {{ w.hours }} ur
+                </span>
+                <b-button variant="outline-light" class="p-0 ml-4">
                   <b-icon-pencil-fill
                     variant="dark"
                     @click.prevent="setEdit(index)"
@@ -120,7 +115,19 @@
                   variant="primary"
                   @click.prevent="addEntry(w, index)"
                 >
-                  <span v-if="!w.isLoading" variant="primary"> Shrani </span>
+                  <span v-if="!w.isLoading" variant="primary">
+                    Shrani <span v-if="!emptyRow">spremembe</span>
+                  </span>
+                  <b-spinner small v-if="w.isLoading"></b-spinner>
+                </b-button>
+
+                <b-button
+                  v-if="!emptyRow"
+                  block
+                  variant="outline-primary"
+                  @click.prevent="cancelEdit(index)"
+                >
+                  <span v-if="!w.isLoading" variant="primary"> Prekliči </span>
                   <b-spinner small v-if="w.isLoading"></b-spinner>
                 </b-button>
               </b-col>
@@ -182,8 +189,8 @@ import {
 
 const locale = srLatn;
 const defaults = {
-  startTime: "07:00",
-  endTime: "15:00",
+  hours_from: "07:00",
+  hours_to: "15:00",
   edit: false,
   isLoading: false,
 };
@@ -210,8 +217,6 @@ export default {
       date = endOfWeek(date);
     }
     return {
-      time_from: "07:00",
-      time_to: "07:00",
       hours: "",
       workplace_id: "",
       workplaces: [],
@@ -255,12 +260,12 @@ export default {
             const day = parse(date, "yyyy-MM-dd HH:mm:ss", new Date());
 
             updated.push({
+              ...defaults,
               cleanDate: format(day, WEEK_FORMAT, { locale }),
               date: format(day, DATE_URL_FORMAT),
               hours: hours_formated,
               workplace_id,
               id,
-              ...defaults,
             });
           }
           this.weeks = [];
@@ -330,6 +335,7 @@ export default {
           } = data[0];
           const day = parse(date, "yyyy-MM-dd HH:mm:ss", new Date());
           const updated = {
+            ...defaults,
             cleanDate: format(day, WEEK_FORMAT, { locale }),
             date: format(day, DATE_URL_FORMAT),
             hours: hours_formated,
@@ -337,7 +343,6 @@ export default {
             hours_to,
             workplace_id,
             id,
-            ...defaults,
           };
           console.log(updated);
           this.$set(this.weeks, index, updated);
@@ -405,8 +410,8 @@ export default {
 
         let day = startOfWeek(this.date, { weekStartsOn: 1 });
         for (let i = 0; i < 7; i++) {
-          let hours_from = "";
-          let hours_to = "";
+          let hours_from = defaults.hours_from;
+          let hours_to = defaults.hours_to;
           let hours = "";
           let workplace_id = "";
           let id = null;
@@ -424,6 +429,8 @@ export default {
               );
             });
 
+            console.log(timeEntry);
+
             if (timeEntry) {
               hours = timeEntry.hours_formated;
               hours_from = timeEntry.hours_from;
@@ -434,6 +441,7 @@ export default {
           }
 
           this.weeks.push({
+            ...defaults,
             cleanDate: format(day, WEEK_FORMAT, { locale }),
             date: format(day, DATE_URL_FORMAT),
             hours,
@@ -441,7 +449,6 @@ export default {
             hours_to,
             workplace_id,
             id,
-            ...defaults,
           });
 
           day = addDays(day, 1);
