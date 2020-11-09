@@ -67,7 +67,7 @@
             <b-row>
               <b-col cols="12" class="text-center">
                 <span
-                  >{{ workplaces.find((wp) => wp.id === w.workplace_id).name }},
+                  >{{ workplaces.find((wp) => wp.id === w.workplace_id).name }}:
                   {{ w.hours }} ur
                 </span>
                 <b-button variant="outline-light" class="p-0 ml-4">
@@ -93,7 +93,7 @@
                 <b-form-timepicker
                   v-model="w.hours_from"
                   locale="sl"
-                  placeholder="začetek"
+                  placeholder="Začetek"
                   minutes-step="15"
                   v-bind:hide-header="true"
                 ></b-form-timepicker>
@@ -102,7 +102,7 @@
                 <b-form-timepicker
                   v-model="w.hours_to"
                   locale="sl"
-                  placeholder="konec"
+                  placeholder="Konec"
                   minutes-step="15"
                   v-bind:hide-header="true"
                 ></b-form-timepicker>
@@ -135,9 +135,9 @@
           </div>
         </b-card-text>
       </b-card>
-      <template>
-        <em>Skupaj ur: {{ hoursSum }}</em>
-      </template>
+      <p>
+        <em>Skupaj ur trenutno: {{ hoursSum }}</em>
+      </p>
       <b-button type="submit">Save all</b-button>
     </b-form>
 
@@ -176,6 +176,7 @@ import { getTimesheet, deleteTimesheet, postTimesheet } from "@/api/timesheet";
 import { getWorkplaces } from "@/api/workplace";
 import HourPicker from "@/components/HourPicker";
 import CompanyPicker from "@/components/CompanyPicker";
+import { generateUrl, generateHours } from "@/utils/helpers";
 import {
   BIconTrash,
   //BIconPlusCircle,
@@ -232,11 +233,11 @@ export default {
   mounted: async function () {
     try {
       if (!this.areParamsValid()) {
-        const year = format(new Date(), "yyy");
-        this.date = new Date(year, 0);
+        const date = generateUrl();
+        this.date = date.date;
         this.$router.replace({
           name: "Timesheet",
-          params: { week: 1, year },
+          params: { week: date.week, year: date.year },
         });
         return;
       } else {
@@ -249,6 +250,7 @@ export default {
     }
   },
   methods: {
+    generateHours: function () {},
     onSubmit: async function () {
       try {
         const res = await postTimesheet(this.weeks);
@@ -256,14 +258,14 @@ export default {
         if (result && errors.length === 0) {
           const updated = [];
           for (let datum of data) {
-            const { hours_formated, workplace_id, id, date } = datum;
+            const { hours_from, hours_to, workplace_id, id, date } = datum;
             const day = parse(date, "yyyy-MM-dd HH:mm:ss", new Date());
 
             updated.push({
               ...defaults,
               cleanDate: format(day, WEEK_FORMAT, { locale }),
               date: format(day, DATE_URL_FORMAT),
-              hours: hours_formated,
+              hours: generateHours(hours_from, hours_to),
               workplace_id,
               id,
             });
@@ -325,26 +327,19 @@ export default {
         ]);
         const { data, result, errors } = res.data;
         if (result && errors.length === 0) {
-          const {
-            hours_formated,
-            workplace_id,
-            id,
-            date,
-            hours_from,
-            hours_to,
-          } = data[0];
+          const { workplace_id, id, date, hours_from, hours_to } = data[0];
           const day = parse(date, "yyyy-MM-dd HH:mm:ss", new Date());
           const updated = {
             ...defaults,
             cleanDate: format(day, WEEK_FORMAT, { locale }),
             date: format(day, DATE_URL_FORMAT),
-            hours: hours_formated,
+            hours: generateHours(hours_from, hours_to),
             hours_from,
             hours_to,
             workplace_id,
             id,
           };
-          console.log(updated);
+
           this.$set(this.weeks, index, updated);
           this.sumHours();
           this.showToast(
@@ -410,8 +405,8 @@ export default {
 
         let day = startOfWeek(this.date, { weekStartsOn: 1 });
         for (let i = 0; i < 7; i++) {
-          let hours_from = defaults.hours_from;
-          let hours_to = defaults.hours_to;
+          let hours_from = "";
+          let hours_to = "";
           let hours = "";
           let workplace_id = "";
           let id = null;
@@ -429,10 +424,8 @@ export default {
               );
             });
 
-            console.log(timeEntry);
-
             if (timeEntry) {
-              hours = timeEntry.hours_formated;
+              hours = generateHours(timeEntry.hours_from, timeEntry.hours_to);
               hours_from = timeEntry.hours_from;
               hours_to = timeEntry.hours_to;
               workplace_id = parseInt(timeEntry.workplace_id);
@@ -486,7 +479,7 @@ export default {
       let sumMinutes = 0;
       this.weeks.forEach((w) => {
         if (w.hours) {
-          const parts = w.hours.split(":");
+          const parts = w.hours.split(",");
           const h = parseInt(parts[0]) * 60;
           const m = parseInt(parts[1]);
           sumMinutes += h + m;

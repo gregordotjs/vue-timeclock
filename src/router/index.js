@@ -36,7 +36,6 @@ const routes = [
       } else next();
     },
     beforeRouteUpdate: (to, from, next) => {
-      alert(to.name);
       if (to.name === "Timesheet" && !localStorage.getItem("token"))
         next({ name: "Home" });
       else next();
