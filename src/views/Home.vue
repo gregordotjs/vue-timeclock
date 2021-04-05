@@ -1,12 +1,9 @@
 <template>
-  <div class="home">
-    Instructions on how to use the app?
-  </div>
+  <div class="home">Upute za upotrebu aplikacije bit će ovdje</div>
 </template>
 
 <script>
-
 export default {
-  name: 'Home',
-}
+  name: "Home",
+};
 </script>

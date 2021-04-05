@@ -1,6 +1,6 @@
 <template>
   <b-form-select required v-model="workplaceSelect" v-if="workplaces">
-    <b-form-select-option disabled value :selected="workplace_id === ''">Izberi podjetje</b-form-select-option>
+    <b-form-select-option disabled value :selected="workplace_id === ''">Odaberi gradilište</b-form-select-option>
     <b-form-select-option
       v-for="wp in workplaces"
       :key="wp.id"

@@ -2,7 +2,7 @@
   <div class="mb-4">
     <b-navbar variant="faded" type="light">
       <b-navbar-brand tag="h1" class="mb-0"
-        >Insert hours for the past week</b-navbar-brand
+        >Unesite sate za prošlu sedmicu</b-navbar-brand
       >
     </b-navbar>
 
@@ -116,7 +116,7 @@
                   @click.prevent="addEntry(w, index)"
                 >
                   <span v-if="!w.isLoading" variant="primary">
-                    Shrani <span v-if="!emptyRow">spremembe</span>
+                    Spremi <span v-if="!emptyRow">spremembe</span>
                   </span>
                   <b-spinner small v-if="w.isLoading"></b-spinner>
                 </b-button>
@@ -136,9 +136,9 @@
         </b-card-text>
       </b-card>
       <p>
-        <em>Skupaj ur trenutno: {{ hoursSum }}</em>
+        <em>Ukupno sati: {{ hoursSum }}</em>
       </p>
-      <b-button type="submit">Save all</b-button>
+      <b-button type="submit">Spremi sve</b-button>
     </b-form>
 
     <b-form v-bind:hidden="true">
@@ -304,8 +304,8 @@ export default {
         timeEntry.hours_to === ""
       ) {
         this.showToast(
-          "Select workplace and hours",
-          "Data is not set",
+          "Odaberi gradilište i sati",
+          "Podaci nisu postavljeni",
           "danger"
         );
         return;
