@@ -11,7 +11,7 @@
         href
         @click.prevent="changeDate(true)"
         :disabled="isLoading"
-        v-bind:hidden="true"
+        v-bind:hidden="false"
         ><b-icon-arrow-left-circle scale="1.5" class="mr-2"
       /></a>
       {{ startOfCurrentWeek }} &mdash; {{ endOfCurrentWeek }}
@@ -19,7 +19,7 @@
         href
         @click.prevent="changeDate(false)"
         :disabled="isLoading"
-        v-bind:hidden="true"
+        v-bind:hidden="false"
         ><b-icon-arrow-right-circle scale="1.5" class="ml-2"
       /></a>
     </div>
