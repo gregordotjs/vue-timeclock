@@ -84,6 +84,7 @@
               <b-col class="mb-2">
                 <CompanyPicker
                   :workplaces="workplaces"
+                  @update="handleCompanyUpdate($event, index)"
                   v-bind:workplace_id.sync="w.workplace_id"
                 />
               </b-col>
@@ -191,7 +192,7 @@ import {
 const locale = srLatn;
 const defaults = {
   hours_from: "07:00",
-  hours_to: "15:00",
+  hours_to: "17:00",
   edit: false,
   isLoading: false,
 };
@@ -218,6 +219,7 @@ export default {
       date = endOfWeek(date);
     }
     return {
+      touched: false,
       hours: "",
       workplace_id: "",
       workplaces: [],
@@ -250,10 +252,34 @@ export default {
     }
   },
   methods: {
+    handleCompanyUpdate: function (workplace_id, index) {
+      if (this.touched) return;
+      const weeks = this.weeks.map((week, i) => {
+        if (week.workplace_id !== "" && i !== index) return week;
+        return {
+          ...week,
+          workplace_id,
+        };
+      });
+      this.weeks = [];
+      this.weeks.push(...weeks);
+      this.touched = true;
+    },
     generateHours: function () {},
     onSubmit: async function () {
       try {
-        const res = await postTimesheet(this.weeks);
+        var batch = this.weeks
+          .filter(
+            (w) =>
+              w.hours_from !== "" && w.hours_to !== "" && w.workplace_id !== ""
+          )
+          .map((w) => ({
+            date: w.date,
+            workplace_id: w.workplace_id,
+            hours_from: w.hours_from,
+            hours_to: w.hours_to,
+          }));
+        const res = await postTimesheet(batch);
         const { data, result, errors } = res.data;
         if (result && errors.length === 0) {
           const updated = [];
@@ -314,7 +340,8 @@ export default {
       try {
         const res = await postTimesheet([
           {
-            ...timeEntry,
+            date: timeEntry.date,
+            workplace_id: timeEntry.workplace_id,
             hours_from: timeEntry.hours_from.slice(
               0,
               timeEntry.hours_from.length - 3
@@ -354,7 +381,7 @@ export default {
     },
     deleteEntry: async function (index, id) {
       try {
-        if (confirm("Želiš odstraniti?")) {
+        if (confirm("Želite li ga ukloniti?")) {
           const { data, status } = await deleteTimesheet(id);
           if (data.result === true && status === 200) {
             const entry = { ...this.weeks[index] };
@@ -405,8 +432,9 @@ export default {
 
         let day = startOfWeek(this.date, { weekStartsOn: 1 });
         for (let i = 0; i < 7; i++) {
-          let hours_from = "";
-          let hours_to = "";
+          const isWorkweek = i < 5;
+          let hours_from = isWorkweek ? defaults.hours_from : "";
+          let hours_to = isWorkweek ? defaults.hours_to : "";
           let hours = "";
           let workplace_id = "";
           let id = null;
@@ -515,6 +543,9 @@ export default {
   watch: {
     "$route.params": function (/*params*/) {
       this.generateForm();
+    },
+    workplace_id: function (value) {
+      console.log(value);
     },
     datePickerValue: function (value) {
       this.date = parse(value, "yyyy-MM-dd", new Date());

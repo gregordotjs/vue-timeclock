@@ -25,6 +25,7 @@ export default {
     workplaceSelect: function (value) {
       const valueToEmit = value === "" ? "" : parseInt(value);
       this.$emit("update:workplace_id", valueToEmit);
+      this.$emit("update", valueToEmit);
     },
   },
 };
