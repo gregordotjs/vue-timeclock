@@ -1,5 +1,5 @@
 import {
-  getWeek,
+  getISOWeek,
   getYear,
   startOfWeek,
   format,
@@ -13,10 +13,9 @@ import {
 const cfg = { weekStartsOn: 1 };
 
 export const generateUrl = (date = null) => {
-  let today = date ? new Date(date) : new Date();
-  today = subWeeks(today, 1); // zakomentiraj ta del, če želiš za aktualni teden
+  let today = date ? new Date(date) : new Date();  
   return {
-    week: getWeek(today, cfg),
+    week: getISOWeek(today, cfg),
     year: getYear(today, cfg),
     date: today,
   };

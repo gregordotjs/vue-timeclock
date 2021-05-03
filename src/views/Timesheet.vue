@@ -188,6 +188,8 @@ import {
   BIconArrowRightCircle,
   BIconPencilFill,
 } from "bootstrap-vue";
+import getISOWeek from "date-fns/getISOWeek/index";
+import getYear from "date-fns/getYear";
 
 const locale = srLatn;
 const defaults = {
@@ -214,10 +216,9 @@ export default {
   data: function () {
     const week = this.$route.params.week;
     const year = this.$route.params.year;
-    let date = addWeeks(new Date(year, 0), week - 1);
-    if (week === 1) {
-      date = endOfWeek(date);
-    }
+    let date = parse(`${year}-${week}`, "RRRR-I", new Date(), {
+      weekStartsOn: 1,
+    });
     return {
       touched: false,
       hours: "",
@@ -276,28 +277,35 @@ export default {
           .map((w) => ({
             date: w.date,
             workplace_id: w.workplace_id,
-            hours_from: w.hours_from,
-            hours_to: w.hours_to,
+            hours_from:
+              w.hours_from.length === 8
+                ? w.hours_from.slice(0, w.hours_from.length - 3)
+                : w.hours_from,
+            hours_to:
+              w.hours_to.length === 8
+                ? w.hours_to.slice(0, w.hours_to.length - 3)
+                : w.hours_to,
           }));
         const res = await postTimesheet(batch);
         const { data, result, errors } = res.data;
+
         if (result && errors.length === 0) {
-          const updated = [];
           for (let datum of data) {
             const { hours_from, hours_to, workplace_id, id, date } = datum;
             const day = parse(date, "yyyy-MM-dd HH:mm:ss", new Date());
-
-            updated.push({
+            const updatedDay = {
               ...defaults,
               cleanDate: format(day, WEEK_FORMAT, { locale }),
               date: format(day, DATE_URL_FORMAT),
               hours: generateHours(hours_from, hours_to),
               workplace_id,
               id,
-            });
+            };
+            const index = this.weeks.findIndex(
+              (week) => week.cleanDate === updatedDay.cleanDate
+            );
+            this.weeks[index] = updatedDay;
           }
-          this.weeks = [];
-          this.weeks.push(...updated);
           this.sumHours();
         }
       } catch (error) {
@@ -493,8 +501,8 @@ export default {
       } else {
         this.date = addWeeks(this.date, 1);
       }
-      this.week = format(this.date, "w");
-      this.year = format(this.date, "yyy");
+      this.week = getISOWeek(this.date);
+      this.year = getYear(this.date);
       this.$router.replace({
         name: "Timesheet",
         params: {
